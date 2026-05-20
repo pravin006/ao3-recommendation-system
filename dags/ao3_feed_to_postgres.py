@@ -6,7 +6,7 @@ from airflow.sdk import dag, task
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 
-FEED_URL = "https://archiveofourown.org/tags/2007008/feed.atom"
+# FEED_URL = "https://archiveofourown.org/tags/2007008/feed.atom"
 
 
 def extract_work_id(url: str) -> str | None:
@@ -34,10 +34,29 @@ def extract_work_id(url: str) -> str | None:
 def ao3_feed_pipeline():
 
     @task
-    def scrape_and_insert():
+    def get_rss_links() -> list[str]:
+        hook = PostgresHook(postgres_conn_id="ao3_postgres")
+
+        feed_rows = hook.get_records(
+            """
+            SELECT link
+            FROM my_rss_links
+            ORDER BY link;
+            """
+        )
+
+        feed_urls = [row[0] for row in feed_rows]
+        return feed_urls
+
+    @task
+    def scrape_and_insert(feed_urls: list[str]):
         import feedparser
 
-        feed = feedparser.parse(FEED_URL)
+        if not feed_urls:
+            print("No RSS feed URLs found. Exiting.")
+            return
+
+        # feed = feedparser.parse(FEED_URL)
 
         hook = PostgresHook(postgres_conn_id="ao3_postgres")
 
@@ -55,47 +74,58 @@ def ao3_feed_pipeline():
         conn = hook.get_conn()
         cursor = conn.cursor()
 
-        for entry in feed.entries:
-            link = entry.get("link")
-            work_id = extract_work_id(link)
+        try:
+            for feed_url in feed_urls:
+                print(f"Reading RSS feed: {feed_url}")
+                feed = feedparser.parse(feed_url)
 
-            if not work_id:
-                print(f"Could not extract work ID for entry: {link}")
-                skipped += 1
-                continue
+                for entry in feed.entries:
+                    link = entry.get("link")
+                    work_id = extract_work_id(link)
 
-            published = entry.get("published")
-            title = entry.get("title")
-            author = entry.get("author")
-            status = "New"
+                    if not work_id:
+                        print(f"Could not extract work ID for entry: {link}")
+                        skipped += 1
+                        continue
 
-            cursor.execute(
-                sql,
-                (
-                    work_id,
-                    published,
-                    link,
-                    status,
-                    title,
-                    author,
-                ),
-            )
+                    published = entry.get("published")
+                    title = entry.get("title")
+                    author = entry.get("author")
+                    status = "New"
 
-            if cursor.rowcount == 0:
-                print(f"Work {work_id} already exists. Skipping.")
-                skipped += 1
-            else:
-                print(f"Inserted work {work_id}.")
-                inserted += 1
+                    cursor.execute(
+                        sql,
+                        (
+                            work_id,
+                            published,
+                            link,
+                            status,
+                            title,
+                            author,
+                        ),
+                    )
 
-        conn.commit()
-        cursor.close()
-        conn.close()
+                    if cursor.rowcount == 0:
+                        print(f"Work {work_id} already exists. Skipping.")
+                        skipped += 1
+                    else:
+                        print(f"Inserted work {work_id}.")
+                        inserted += 1
+
+                conn.commit()
+
+        except Exception:
+            conn.rollback()
+            raise
+
+        finally:
+            cursor.close()
+            conn.close()
 
         print(f"Inserted: {inserted}")
         print(f"Skipped: {skipped}")
 
-    scrape_and_insert()
+    scrape_and_insert(get_rss_links())
 
 
 ao3_feed_pipeline()
