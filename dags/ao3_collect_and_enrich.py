@@ -552,6 +552,7 @@ def ao3_collect_and_enrich():
             SELECT link
             FROM all_works
             WHERE status = 'New'
+                AND published::timestamptz <= NOW() - INTERVAL '7 days'
             ORDER BY published ASC NULLS LAST
             LIMIT %s;
             """,
