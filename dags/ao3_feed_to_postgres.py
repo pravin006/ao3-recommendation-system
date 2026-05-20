@@ -1,7 +1,5 @@
-# dags/ao3_feed_to_postgres.py
-
-import re
-import feedparser
+# import re
+# import feedparser
 import pendulum
 
 from airflow.sdk import dag, task
@@ -16,6 +14,7 @@ def extract_work_id(url: str) -> str | None:
     Returns a work ID string from URLs like:
     https://archiveofourown.org/works/33023536
     """
+    import re
     match = re.search(r"/works/(\d+)", url)
 
     if match:
@@ -26,7 +25,7 @@ def extract_work_id(url: str) -> str | None:
 
 @dag(
     dag_id="ao3_feed_to_postgres",
-    schedule="0 */6 * * *",
+    schedule="*/6 * * * *",
     # schedule="*/5 * * * *",
     start_date=pendulum.datetime(2026, 5, 14, tz="Asia/Singapore"),
     catchup=False,
@@ -36,6 +35,8 @@ def ao3_feed_pipeline():
 
     @task
     def scrape_and_insert():
+        import feedparser
+
         feed = feedparser.parse(FEED_URL)
 
         hook = PostgresHook(postgres_conn_id="ao3_postgres")
