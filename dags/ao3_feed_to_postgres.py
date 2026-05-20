@@ -25,7 +25,7 @@ def extract_work_id(url: str) -> str | None:
 
 @dag(
     dag_id="ao3_feed_to_postgres",
-    schedule="*/6 * * * *",
+    schedule="0 */6 * * *",
     # schedule="*/5 * * * *",
     start_date=pendulum.datetime(2026, 5, 14, tz="Asia/Singapore"),
     catchup=False,

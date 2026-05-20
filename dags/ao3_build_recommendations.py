@@ -288,7 +288,7 @@ def recommend_works_content_based(X, all_works_df):
 
 @dag(
     dag_id="ao3_build_recommendations",
-    schedule="*/5 * * * *",
+    schedule="0 0 * * 7",
     start_date=pendulum.datetime(2026, 5, 14, tz="Asia/Singapore"),
     catchup=False,
     max_active_runs=1,
