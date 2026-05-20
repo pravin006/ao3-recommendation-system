@@ -25,3 +25,7 @@ CREATE TABLE IF NOT EXISTS public_bookmarks (
     work_id TEXT,
     PRIMARY KEY (user_id, work_id)
 );
+
+CREATE TABLE IF NOT EXISTS my_rss_links (
+    link TEXT PRIMARY KEY
+);
