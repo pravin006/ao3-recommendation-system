@@ -491,7 +491,7 @@ def collect_and_update_with_new_works(
 @dag(
     dag_id="ao3_collect_and_enrich",
     # schedule="0 */6 * * *",
-    schedule="*/7 * * * *",
+    schedule="0 */7 * * *",
     start_date=pendulum.datetime(2026, 5, 14, tz="Asia/Singapore"),
     catchup=False,
     render_template_as_native_obj=True,
