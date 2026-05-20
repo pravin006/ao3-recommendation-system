@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-import json
-import math
-import re
-import time
+# import json
+# import math
+# import re
+# import time
 from typing import Any
 
 import pendulum
-import requests
-from bs4 import BeautifulSoup
+# import requests
+# from bs4 import BeautifulSoup
 
 from airflow.sdk import dag, task, Param, get_current_context
 from airflow.providers.postgres.hooks.postgres import PostgresHook
@@ -36,6 +36,9 @@ def get_html(
     """
     Fetch a page slowly and retry temporary failures.
     """
+    import requests
+    import time
+
     last_error = None
 
     for attempt in range(1, retries + 1):
@@ -71,6 +74,7 @@ def get_html(
 
 
 def extract_work_id(url: str) -> str | None:
+    import re
     match = re.search(r"/works/(\d+)", url)
     return match.group(1) if match else None
 
@@ -120,6 +124,9 @@ def extract_stats_text(soup: BeautifulSoup) -> dict[str, Any]:
 
 
 def parse_work_page(html: str, url: str) -> dict[str, Any]:
+    import re
+    from bs4 import BeautifulSoup
+
     soup = BeautifulSoup(html, "html.parser")
 
     title_element = soup.select_one("h2.title")
@@ -176,6 +183,7 @@ def parse_work_page(html: str, url: str) -> dict[str, Any]:
 # ---------------------------------------------------------------------
 
 def get_total_bookmark_pages(bookmarks_count: int | str | None, per_page: int = 20) -> int:
+    import math
     if not bookmarks_count:
         return 0
 
@@ -197,6 +205,9 @@ def get_bookmarks_page_url(work_url: str, page: int) -> str:
 
 
 def parse_bookmark_users(html: str) -> list[str]:
+    import re
+    from bs4 import BeautifulSoup
+
     soup = BeautifulSoup(html, "html.parser")
     users: set[str] = set()
 
@@ -382,6 +393,7 @@ def collect_and_update_with_new_works(
     links_list: list[str],
     update_my_interactions: bool,
 ) -> dict[str, int]:
+    import json
     hook = PostgresHook(postgres_conn_id=POSTGRES_CONN_ID)
 
     processed = 0
@@ -479,7 +491,7 @@ def collect_and_update_with_new_works(
 @dag(
     dag_id="ao3_collect_and_enrich",
     # schedule="0 */6 * * *",
-    schedule="*/60 * * * *",
+    schedule="*/7 * * * *",
     start_date=pendulum.datetime(2026, 5, 14, tz="Asia/Singapore"),
     catchup=False,
     render_template_as_native_obj=True,
