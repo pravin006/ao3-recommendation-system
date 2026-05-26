@@ -60,7 +60,7 @@ x-airflow-common:
     # AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql+psycopg2://airflow:airflow@postgres/airflow
     # AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
     AIRFLOW__CORE__FERNET_KEY: ${FERNET_KEY}
-    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'false'
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-apiserver:8080/execution/'
     AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW__API_AUTH__JWT_SECRET:-airflow_jwt_secret}
@@ -92,8 +92,6 @@ x-airflow-common:
     #   condition: service_healthy
     postgres:
       condition: service_healthy
-    kafka-topic-init:
-      condition: service_completed_successfully
 
 services:
   postgres:
@@ -170,6 +168,8 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+      airflow-apiserver:
+        condition: service_healthy
 
   airflow-dag-processor:
     <<: *airflow-common
@@ -185,6 +185,8 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+      airflow-apiserver:
+        condition: service_healthy
 
   # airflow-worker:
   #   <<: *airflow-common
@@ -360,45 +362,33 @@ services:
       KAFKA_NUM_PARTITIONS: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
 
-      # Keep local storage small-ish.
       KAFKA_LOG_RETENTION_HOURS: 24
       KAFKA_LOG_SEGMENT_BYTES: 104857600
-
     volumes:
       - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server kafka:9092 >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+      start_period: 60s
   
-  kafka-topic-init:
-    image: apache/kafka:3.9.0
-    container_name: kafka-topic-init
+  ao3-kafka-consumer:
+    build: .
+    container_name: ao3-kafka-consumer
+    restart: unless-stopped
+    command: python /opt/airflow/consumer/ao3_kafka_to_postgres.py
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_AO3_NEW_WORKS_TOPIC: ao3.new_works
+      AO3_POSTGRES_DSN: postgresql://ao3_user:ao3_password@ao3-postgres:5432/ao3_db
+    volumes:
+      - ${AIRFLOW_PROJ_DIR:-.}/consumer:/opt/airflow/consumer
     depends_on:
-      - kafka
-    entrypoint:
-      - /bin/bash
-      - -ec
-      - |
-        echo "Waiting for Kafka..."
-
-        until /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list; do
-          echo "Kafka not ready yet..."
-          sleep 2
-        done
-
-        echo "Creating topic ao3.new_works..."
-
-        /opt/kafka/bin/kafka-topics.sh \
-          --bootstrap-server kafka:9092 \
-          --create \
-          --if-not-exists \
-          --topic ao3.new_works \
-          --partitions 1 \
-          --replication-factor 1
-
-        echo "Topics after creation:"
-
-        /opt/kafka/bin/kafka-topics.sh \
-          --bootstrap-server kafka:9092 \
-          --list
-  
+      kafka:
+        condition: service_healthy
+      ao3-postgres:
+        condition: service_started
 
   # You can enable flower by adding "--profile flower" option e.g. docker-compose --profile flower up
   # or by explicitly targeted on the command line e.g. docker-compose up flower.

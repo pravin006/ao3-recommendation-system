@@ -3,6 +3,8 @@ apache-airflow-providers-postgres==6.6.3
 bs4==0.0.2
 scipy==1.17.1
 scikit-learn==1.8.0
+psycopg2-binary==2.9.10
+confluent-kafka==2.14.0
 # pandas==3.0.3
 # numpy==2.4.6
 # pyarrow==24.0.0
