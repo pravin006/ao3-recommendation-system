@@ -26,5 +26,4 @@ done
 
 links+="]"
 
-docker compose exec airflow-scheduler airflow dags unpause "$DAG_ID"
 docker compose exec airflow-scheduler airflow dags trigger "$DAG_ID" --conf "{\"source_mode\": \"${MODE}\", \"manual_work_links\": ${links}}"
