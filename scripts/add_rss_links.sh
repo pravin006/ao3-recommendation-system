@@ -8,7 +8,7 @@ set -euo pipefail
 # if number of arguments given are less than 1, print usage and exit
 if [ "$#" -lt 1 ]; then
   echo "Usage example:"
-  echo '''bash ./scripts/add_rss_link.sh "https://archiveofourown.org/tags/86392389/feed.atom" "rss_link_2" "rss_link_3"'''
+  echo '''bash ./scripts/add_rss_links.sh "https://archiveofourown.org/tags/86392389/feed.atom" "rss_link_2" "rss_link_3"'''
   exit 1
 fi
 
