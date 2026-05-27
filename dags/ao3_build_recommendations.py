@@ -347,8 +347,6 @@ def ao3_build_recommendations():
             """,
         )
         my_bookmarks = pd.DataFrame(rows, columns=["work_id"])
-        my_bookmarks["user_id"] = MY_USER_ID
-        my_bookmarks["interaction_score"] = 1
 
         rows = hook.get_records(
             """
@@ -357,6 +355,12 @@ def ao3_build_recommendations():
             """,
         )
         public_bookmarks = pd.DataFrame(rows, columns=["user_id", "work_id"])
+        if my_bookmarks.empty or public_bookmarks.empty:
+            return None
+
+        my_bookmarks["user_id"] = MY_USER_ID
+        my_bookmarks["interaction_score"] = 1
+
         public_bookmarks["interaction_score"] = 1
         public_bookmarks = public_bookmarks[["user_id", "work_id", "interaction_score"]]
 
@@ -429,7 +433,8 @@ def ao3_build_recommendations():
         )
         not_bookmarked_works = pd.DataFrame(rows, columns=["work_id", "rating", "categories", "fandoms", "relationships", "characters", "freeform_tags"])
 
-
+        if bookmarked_works.empty or not_bookmarked_works.empty:
+            return None
 
         copy_of_not_bookmarked_works_df = not_bookmarked_works.copy()
         for col in tag_column_scores.keys():
@@ -458,6 +463,11 @@ def ao3_build_recommendations():
     def final_recommendation(collaborative_rebuilt: bool,content_rebuilt: bool,) -> None:
         import pandas as pd
         from pathlib import Path
+
+        if collaborative_rebuilt == None or content_rebuilt == None:
+            print(f"User and public bookmarks exists for collaborative recommendations") if collaborative_rebuilt == True else print(f"No user and/or public bookmarks for collaborative recommendations")
+            print(f"Enriched works and user bookmarks exist for content recommendations") if content_rebuilt == True else print(f"No enriched works and/or user bookmarks exist for content recommendations")
+            return
 
         context = get_current_context()
         top_n = context["params"]["top_n"]
