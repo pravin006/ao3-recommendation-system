@@ -120,8 +120,7 @@ https://archiveofourown.org/tags/<tag-id-or-tag-name>/feed.atom
 Add one or more feed links:
 
 ```bash
-bash scripts/add_rss_links.sh "https://archiveofourown.org/tags/2007008/feed.atom" \
-  "https://archiveofourown.org/tags/124953688/feed.atom"
+bash scripts/add_rss_links.sh "https://archiveofourown.org/tags/2007008/feed.atom" "https://archiveofourown.org/tags/124953688/feed.atom"
 ```
 
 ### Add your own bookmarked works
@@ -129,8 +128,7 @@ bash scripts/add_rss_links.sh "https://archiveofourown.org/tags/2007008/feed.ato
 Use AO3 work links or bookmark links as your personal preference seed:
 
 ```bash
-bash scripts/add_my_bookmarks.sh "https://archiveofourown.org/works/WORK_ID" \
-  "https://archiveofourown.org/works/ANOTHER_WORK_ID"
+bash scripts/add_my_bookmarks.sh "https://archiveofourown.org/works/WORK_ID" "https://archiveofourown.org/works/ANOTHER_WORK_ID"
 ```
 
 ### Retrieve new works from feeds
