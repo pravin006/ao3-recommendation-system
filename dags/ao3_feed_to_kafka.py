@@ -59,8 +59,8 @@ def delivery_report(err, msg):
 
 @dag(
     dag_id="ao3_feed_to_postgres",
-    # schedule="0 */6 * * *",
-    schedule="*/5 * * * *",
+    schedule="0 */6 * * *",
+    # schedule="*/5 * * * *",
     start_date=pendulum.datetime(2026, 5, 14, tz="Asia/Singapore"),
     catchup=False,
     tags=["ao3", "rss", "postgres"],
